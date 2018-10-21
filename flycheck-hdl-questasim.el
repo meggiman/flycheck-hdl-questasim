@@ -34,16 +34,17 @@
 
 ;;; Code:
 
+(defvar flycheck-hdl-questasim-use-global-workdir nil "It non-nil a work library in the projectile-root will be used. This makes it possible resolve symbols defined in multiple files in different directories since the workdir will accumulate the compiled files with each parsed buffer.")
+
 (flycheck-define-checker hdl-questasim-vlog
   "A Verilog/SystemVerilog syntax checker using the vlog compiler of Mentor Graphics Questasim.
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vlog" "-sv" "-work" (eval (concat (projectile-project-root) ".flycheck-work/"))  source)
+  :command ("vlog" "-sv" "-work" (eval (flycheck-hdl-questasim-workdir))  source)
   :error-patterns
   ((error line-start "** Error"  (opt " (suppressible)") ": " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " "(" (id (and "vlog-" (one-or-more digit))) ") " (file-name) "(" line "): " (message)))
-  :enabled (lambda() (projectile-project-root))
   :modes verilog-mode
   )
 
@@ -52,11 +53,10 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vcom" "-work" (eval (concat (projectile-project-root) ".flycheck-work/"))  source)
+  :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir))  source)
   :error-patterns
   ((error line-start "** Error: (" (id (and "vcom-" (one-or-more digit) ") " (message))))
    (error line-start "** Error" (opt " (suppressible)") ": " (file-name) "(" line "): " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
-  :enabled (lambda() (projectile-project-root))
   :modes vhdl-mode
   )
 
@@ -64,11 +64,30 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 (defun flycheck-hdl-questasim-clear-workdir ()
   "Clears the questasim working directory used for flycheck if not nill."
   (interactive)
-  (if (file-directory-p (concat (projectile-project-root) ".flycheck-work/"))
+  (if (file-directory-p (flycheck-hdl-questasim-workdir))
       (progn
-        (delete-directory (concat (projectile-project-root) ".flycheck-work/") t)
+        (delete-directory (flycheck-hdl-questasim-workdir) t)
         (message "Successfully deleted working directory"))
     (message "No working directory found to delete. Is the current file within a projectile project?")))
+
+(defun flycheck-hdl-questasim-workdir ()
+  (if flycheck-hdl-questasim-use-global-workdir
+      (concat (projectile-project-root) ".flycheck-work/")
+    ".flycheck-work"))
+
+(defun flycheck-hdl-questasim-toggle-local-workdir ()
+  "Toggles the usage of a local work directory instead of the global one at <projectile-root>."
+  (interactive)
+  (if flycheck-hdl-questasim-use-global-workdir
+      (progn
+        (message "Switching to local workdir")
+        (setq flycheck-hdl-questasim-use-global-workdir nil))
+    (if (not flycheck-hdl-questasim-use-global-workdir)
+        (if (projectile-project-p)
+            (progn
+              (message "Switching to global workdir at %s" (projectile-project-root))
+              (setq flycheck-hdl-questasim-use-global-workdir t))
+          (message "No projectile project was found. Cannot switch to global workdir")))))
 
 (add-to-list 'flycheck-checkers 'hdl-questasim-vlog)
 (add-to-list 'flycheck-checkers 'hdl-questasim-vcom)
