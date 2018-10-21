@@ -75,8 +75,8 @@ See URL `https://www.mentor.com/products/fv/questa/'."
       (concat (projectile-project-root) ".flycheck-work/")
     ".flycheck-work"))
 
-(defun flycheck-hdl-questasim-toggle-local-workdir ()
-  "Toggles the usage of a local work directory instead of the global one at <projectile-root>."
+(defun flycheck-hdl-questasim-toggle-workdir ()
+  "Toggles between the usage of a global and a local working directory for compilation. A hidden directory in the projectile project root is used for the global working directory."
   (interactive)
   (if flycheck-hdl-questasim-use-global-workdir
       (progn
