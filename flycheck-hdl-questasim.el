@@ -41,8 +41,8 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
   :command ("vlog" "-sv" "-work" (eval (concat (projectile-project-root) ".flycheck-work/"))  source)
   :error-patterns
-  ((error line-start "** Error: " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
-   (error line-start "** Error: (" (id (and "vlog-" (one-or-more digit))) ") " (file-name) "(" line "): " (message)))
+  ((error line-start "** Error"  (opt " (suppressible)") ": " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
+   (error line-start "** Error"  (opt " (suppressible)") ": " "(" (id (and "vlog-" (one-or-more digit))) ") " (file-name) "(" line "): " (message)))
   :enabled (lambda() (projectile-project-root))
   :modes verilog-mode
   )
@@ -54,8 +54,8 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
   :command ("vcom" "-work" (eval (concat (projectile-project-root) ".flycheck-work/"))  source)
   :error-patterns
-  ((error line-start "** Error: " (file-name) "(" line "): (" (id (and "vcom-" (one-or-more digit))) ") " (message) line-end)
-   (error line-start "** Error: (" (id (and "vcom-" (one-or-more digit))) ") " (file-name) "(" line "): " (message)))
+  ((error line-start "** Error: (" (id (and "vcom-" (one-or-more digit) ") " (message))))
+   (error line-start "** Error" (opt " (suppressible)") ": " (file-name) "(" line "): " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
   :enabled (lambda() (projectile-project-root))
   :modes vhdl-mode
   )
@@ -70,7 +70,8 @@ See URL `https://www.mentor.com/products/fv/questa/'."
         (message "Successfully deleted working directory"))
     (message "No working directory found to delete. Is the current file within a projectile project?")))
 
-(add-to-list 'flycheck-checkers 'hdl-questasim-vlog 'hdl-questasim-vcom)
+(add-to-list 'flycheck-checkers 'hdl-questasim-vlog)
+(add-to-list 'flycheck-checkers 'hdl-questasim-vcom)
 
 (provide 'flycheck-hdl-questasim)
 

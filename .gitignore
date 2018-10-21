@@ -1,3 +1,6 @@
+# Python profiling information
+gmon.out
+
 # Compiled
 *.elc
 
