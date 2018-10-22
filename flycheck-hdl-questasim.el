@@ -4,7 +4,7 @@
 ;;
 ;; Author: Manuel Eggimann <meggimann@iis.ee.ethz.ch>
 ;; Created: 21.10.2018
-;; Version: 0.1
+;; Version: 0.2
 ;; Package-Requires: ((flycheck "0.25") projectile verilog-mode vhdl-mode)
 
 ;;; License:
