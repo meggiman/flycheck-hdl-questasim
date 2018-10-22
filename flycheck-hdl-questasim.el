@@ -41,7 +41,7 @@
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vlog" "-sv" "-work" (eval (flycheck-hdl-questasim-workdir))  source)
+  :command ("vlog" "-sv" "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source)
   :error-patterns
   (;(error line-start "** Error"  (opt " (suppressible)") ": " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) "(" line "): " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
@@ -53,7 +53,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir))  source)
+  :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source)
   :error-patterns
   ((error line-start "** Error: (" (id (and "vcom-" (one-or-more digit) ") " (message))))
    (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) "(" line "): " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
@@ -72,8 +72,13 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 (defun flycheck-hdl-questasim-workdir ()
   (if (and (projectile-project-p) flycheck-hdl-questasim-use-global-workdir)
-      (concat (projectile-project-root) ".flycheck-work/")
+      (concat (projectile-project-root) ".flycheck-work")
     ".flycheck-work"))
+
+(defun flycheck-hdl-questasim-modelsimini ()
+  "Searches for a global modelsimini file and returns its path if found."
+  (when (and flycheck-hdl-questasim-use-global-workdir (file-exists-p (concat (projectile-project-root) "/.modelsim.ini")))
+    (concat (projectile-project-root) ".modelsim.ini")))
 
 (defun flycheck-hdl-questasim-toggle-workdir ()
   "Toggles between the usage of a global and a local working directory for compilation. A hidden directory in the projectile project root is used for the global working directory."
@@ -88,6 +93,14 @@ See URL `https://www.mentor.com/products/fv/questa/'."
               (message "Switching to global workdir at %s" (projectile-project-root))
               (setq flycheck-hdl-questasim-use-global-workdir t))
           (message "No projectile project was found. Cannot switch to global workdir")))))
+
+(defun flycheck-hdl-remove-modelsimini ()
+  "Deletes the modelsimini in the current directory if one of the questasim checkers is enabled."
+  (when (or (flycheck-may-use-checker 'hdl-questasim-vcom) (flycheck-may-use-checker 'hdl-questasim-vlog))
+      (delete-file "modelsim.ini")))
+
+;;Cleanup modelsim.ini files after each syntax check
+(add-hook 'flycheck-after-syntax-check-hook 'flycheck-hdl-remove-modelsimini)
 
 (add-to-list 'flycheck-checkers 'hdl-questasim-vlog)
 (add-to-list 'flycheck-checkers 'hdl-questasim-vcom)
