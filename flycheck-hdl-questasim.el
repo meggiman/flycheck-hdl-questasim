@@ -43,8 +43,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
   :command ("vlog" "-sv" "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source)
   :error-patterns
-  (;(error line-start "** Error"  (opt " (suppressible)") ": " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
-   (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) "(" line "): " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
+  ((error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
   :modes verilog-mode
   )
 
@@ -55,8 +54,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
   :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source)
   :error-patterns
-  ((error line-start "** Error: (" (id (and "vcom-" (one-or-more digit) ") " (message))))
-   (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) "(" line "): " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
+  ((error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
   :modes vhdl-mode
   )
 
