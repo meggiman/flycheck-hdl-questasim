@@ -43,8 +43,8 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
   :command ("vlog" "-sv" "-work" (eval (flycheck-hdl-questasim-workdir))  source)
   :error-patterns
-  ((error line-start "** Error"  (opt " (suppressible)") ": " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
-   (error line-start "** Error"  (opt " (suppressible)") ": " "(" (id (and "vlog-" (one-or-more digit))) ") " (file-name) "(" line "): " (message)))
+  (;(error line-start "** Error"  (opt " (suppressible)") ": " (file-name) "(" line "): (" (id (and "vlog-" (one-or-more digit))) ") " (message) line-end)
+   (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) "(" line "): " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
   :modes verilog-mode
   )
 
@@ -56,7 +56,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
   :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir))  source)
   :error-patterns
   ((error line-start "** Error: (" (id (and "vcom-" (one-or-more digit) ") " (message))))
-   (error line-start "** Error" (opt " (suppressible)") ": " (file-name) "(" line "): " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
+   (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) "(" line "): " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
   :modes vhdl-mode
   )
 
@@ -71,7 +71,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
     (message "No working directory found to delete. Is the current file within a projectile project?")))
 
 (defun flycheck-hdl-questasim-workdir ()
-  (if flycheck-hdl-questasim-use-global-workdir
+  (if (and (projectile-project-p) flycheck-hdl-questasim-use-global-workdir)
       (concat (projectile-project-root) ".flycheck-work/")
     ".flycheck-work"))
 
