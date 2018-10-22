@@ -34,6 +34,8 @@
 
 ;;; Code:
 
+(require 'flycheck)
+
 (defvar flycheck-hdl-questasim-use-global-workdir nil "It non-nil a work library in the projectile-root will be used. This makes it possible resolve symbols defined in multiple files in different directories since the workdir will accumulate the compiled files with each parsed buffer.")
 
 (flycheck-define-checker hdl-questasim-vlog
@@ -97,7 +99,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 (defun flycheck-hdl-remove-modelsimini ()
   "Deletes the modelsimini in the current directory if one of the questasim checkers is enabled."
   (when (or (flycheck-may-use-checker 'hdl-questasim-vcom) (flycheck-may-use-checker 'hdl-questasim-vlog))
-      (delete-file "modelsim.ini")))
+    (delete-file "modelsim.ini")))
 
 ;;Cleanup modelsim.ini files after each syntax check
 (add-hook 'flycheck-after-syntax-check-hook 'flycheck-hdl-remove-modelsimini)
