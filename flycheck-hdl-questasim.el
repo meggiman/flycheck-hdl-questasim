@@ -47,9 +47,10 @@
   (split-string (string-trim (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/" source-original ".toplevels.txt"))))
   )
 
-(defun flycheck-hdl-questasim-toplevels-exists-p ()
+(defun flycheck-hdl-questasim-run-vopt-p ()
+  "Only run vopt checker if the buffer is not modified and toplevel modules where detected."
   (let ((path (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")))
-    (and (file-exists-p path) (not (string= "" (shell-command-to-string (concat "cat " path))))))
+    (and (not (buffer-modified-p))  (file-exists-p path) (not (string= "" (shell-command-to-string (concat "cat " path))))))
   )
 
 (defun flycheck-hdl-questasim-clear-workdir ()
@@ -96,22 +97,52 @@
 See URL `https://www.mentor.com/products/fv/questa/'."
 
   :command ("vlog" "-sv" "-noincr" "-lint" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source-original)
+  :predicate (lambda () (not (buffer-modified-p)))
   :error-patterns
   ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
   :modes verilog-mode
+  :error-filter (lambda (list) nil) ;; We do not care about the output of this
+  ;; checker. We are only interested in the sid-effects
   :next-checkers ((warning . hdl-questasim-vopt))
+  )
+
+(flycheck-define-checker hdl-questasim-vlog-live
+  "A Verilog/SystemVerilog syntax checker using the vlog compiler of Mentor Graphics Questasim.
+
+See URL `https://www.mentor.com/products/fv/questa/'."
+
+  :command ("vlog" "-sv" "-noincr" "-lint" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source)
+  :error-patterns
+  ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
+   (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
+  :modes verilog-mode
+  :next-checkers ((warning . hdl-questasim-vlog))
   )
 
 (flycheck-define-checker hdl-questasim-vopt
   "Shows elaboration time errors and warnings for desing preveously checked with hdl-questasim-vlog or hdl-questasim-vcom using vopt."
 
   :command ("vopt" "-lint" "-pedanticerrors" "-check_synthesis" "-noincr" "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (flycheck-hdl-questasim-get-toplevels (file-name-nondirectory (buffer-file-name)))) "-o" (eval (s-replace "." "_" (concat (file-name-nondirectory (buffer-file-name)) "_opt"))) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))))
-  :predicate flycheck-hdl-questasim-toplevels-exists-p
+  :predicate flycheck-hdl-questasim-run-vopt-p
   :error-patterns
   ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
   :modes verilog-mode
+  )
+
+
+(flycheck-define-checker hdl-questasim-vcom-live
+  "A VHDL syntax checker using the vcom compiler of Mentor Graphics Questasim.
+
+See URL `https://www.mentor.com/products/fv/questa/'."
+
+  :command ("vcom" "-noincr" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source)
+  :error-patterns
+  ((warning line-start "** Warning" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end)
+   (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
+  :modes vhdl-mode
+  :next-checkers ((warning . hdl-questasim-vcom))
   )
 
 
@@ -120,19 +151,24 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source-original)
+  :command ("vcom" "-noincr" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source-original)
+  :predicate (lambda () (not (buffer-modified-p)))
   :error-patterns
   ((warning line-start "** Warning" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
+  :error-filter (lambda (list) nil) ;; We do not care about the output of this
+  ;; checker. We are only interested in the sid-effects
   :modes vhdl-mode
+  :next-checkers ((warning . hdl-questasim-vopt))
   )
-
 
 ;;Cleanup modelsim.ini files after each syntax check
 (add-hook 'flycheck-after-syntax-check-hook 'flycheck-hdl-remove-modelsimini)
 
-(add-to-list 'flycheck-checkers 'hdl-questasim-vcom)
-(add-to-list 'flycheck-checkers 'hdl-questasim-vlog)
+(add-to-list 'flycheck-checkers 'hdl-questasim-vlog-live)
+(add-to-list 'flycheck-checkers 'hdl-questasim-vcom-live)
+(add-to-list 'flycheck-checkers 'hdl-questasim-vcom 'append)
+(add-to-list 'flycheck-checkers 'hdl-questasim-vlog 'append)
 (add-to-list 'flycheck-checkers 'hdl-questasim-vopt 'append)
 
 
