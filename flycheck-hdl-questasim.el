@@ -36,8 +36,11 @@
 
 (require 'flycheck)
 
+(defgroup flycheck-hdl-questasim nil "Customization for the questasim flycheck syntax checker")
+
 (defcustom flycheck-hdl-questasim-use-global-workdir t "If non-nil a work library in the projectile-root will be used. This makes it possible resolve symbols defined in multiple files in different directories since the workdir will accumulate the compiled files with each parsed buffer. By default (nil) a working directory in the buffers current directory will be used."
-  :type '(boolean))
+  :type '(boolean)
+  :group 'flycheck-hdl-questasim)
 
 (flycheck-define-checker hdl-questasim-vlog
   "A Verilog/SystemVerilog syntax checker using the vlog compiler of Mentor Graphics Questasim.
