@@ -42,9 +42,9 @@
   :type '(boolean)
   :group 'flycheck-hdl-questasim)
 
-(defun flycheck-hdl-questasim-get-toplevels (source-inplace)
+(defun flycheck-hdl-questasim-get-toplevels (source-original)
   "Reads and returns the toplevel modules from a previously generated toplevels.txt"
-  (split-string (string-trim (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/" source-inplace ".toplevels.txt"))))
+  (split-string (string-trim (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/" source-original ".toplevels.txt"))))
   )
 
 (defun flycheck-hdl-questasim-toplevels-exists-p ()
@@ -95,7 +95,7 @@
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vlog" "-sv" "-noincr" "-lint" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source-inplace)
+  :command ("vlog" "-sv" "-noincr" "-lint" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source-original)
   :error-patterns
   ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
@@ -120,7 +120,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source-inplace)
+  :command ("vcom" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source-original)
   :error-patterns
   ((warning line-start "** Warning" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
