@@ -53,6 +53,21 @@
     (and (not (buffer-modified-p))  (file-exists-p path) (not (string= "" (shell-command-to-string (concat "cat " path))))))
   )
 
+(defun flycheck-hdl-questasim-get-vlog-args ()
+  "If a .flycheck-work/vlog_args.txt exists its content will be returned. This function is used to pass additional arguments to vlog (e.g. include directives etc.)"
+  (when (file-exists-p (concat (flycheck-hdl-questasim-workdir) "/vlog_args.txt")) (split-string (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/vlog_args.txt"))))
+  )
+
+(defun flycheck-hdl-questasim-get-vcom-args ()
+  "If a .flycheck-work/vcom_args.txt exists its content will be returnbed. This function is used to pass additional arguments to vcom (e.g. include directives etc.)"
+  (when (file-exists-p (concat (flycheck-hdl-questasim-workdir) "/vcom_args.txt")) (split-string (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/vcom_args.txt"))))
+  )
+
+(defun flycheck-hdl-questasim-get-vopt-args ()
+  "If a .flycheck-work/vopt_args.txt exists its content will be returnbed. This function is used to pass additional arguments to vopt (e.g. include directives etc.)"
+  (when (file-exists-p (concat (flycheck-hdl-questasim-workdir) "/vopt_args.txt")) (split-string (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/vopt_args.txt"))))
+  )
+
 (defun flycheck-hdl-questasim-clear-workdir ()
   "Clears the questasim working directory used for flycheck if not nill."
   (interactive)
@@ -69,8 +84,8 @@
 
 (defun flycheck-hdl-questasim-modelsimini ()
   "Searches for a global modelsimini file and returns its path if found."
-  (when (and flycheck-hdl-questasim-use-global-workdir (file-exists-p (concat (projectile-project-root) "/.modelsim.ini")))
-    (concat (projectile-project-root) ".modelsim.ini")))
+  (when (and flycheck-hdl-questasim-use-global-workdir (file-exists-p (concat (flycheck-hdl-questasim-workdir) "/modelsim.ini")))
+    (concat (flycheck-hdl-questasim-workdir) "/modelsim.ini")))
 
 (defun flycheck-hdl-questasim-toggle-workdir ()
   "Toggles between the usage of a global and a local working directory for compilation. A hidden directory in the projectile project root is used for the global working directory."
@@ -88,7 +103,7 @@
 
 (defun flycheck-hdl-remove-modelsimini ()
   "Deletes the modelsimini in the current directory if one of the questasim checkers is enabled."
-  (when (or (flycheck-may-use-checker 'hdl-questasim-vcom) (flycheck-may-use-checker 'hdl-questasim-vlog))
+  (when (or (flycheck-may-use-checker 'hdl-questasim-vcom-live) (flycheck-may-use-checker 'hdl-questasim-vlog-live))
     (delete-file "modelsim.ini")))
 
 (flycheck-define-checker hdl-questasim-vlog
@@ -96,12 +111,13 @@
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vlog" "-sv" "-noincr" "-lint" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source-original)
+  :command ("vlog" "-sv" "-noincr" "-lint" (eval (flycheck-hdl-questasim-get-vlog-args)) "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source-original)
   :predicate (lambda () (not (buffer-modified-p)))
   :error-patterns
   ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
   :modes verilog-mode
+  :working-directory (lambda (checker) (when flycheck-hdl-questasim-use-global-workdir (projectile-project-root)))
   :error-filter (lambda (list) nil) ;; We do not care about the output of this
   ;; checker. We are only interested in the sid-effects
   :next-checkers ((warning . hdl-questasim-vopt))
@@ -112,23 +128,26 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vlog" "-sv" "-noincr" "-lint" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source)
+  :command ("vlog" "-sv" "-noincr" "-lint" (eval (flycheck-hdl-questasim-get-vlog-args)) "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini))))  source)
   :error-patterns
   ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
   :modes verilog-mode
+  :working-directory (lambda (checker) (when flycheck-hdl-questasim-use-global-workdir (projectile-project-root)))
   :next-checkers ((warning . hdl-questasim-vlog))
   )
 
 (flycheck-define-checker hdl-questasim-vopt
   "Shows elaboration time errors and warnings for desing preveously checked with hdl-questasim-vlog or hdl-questasim-vcom using vopt."
 
-  :command ("vopt" "-lint" "-pedanticerrors" "-check_synthesis" "-noincr" "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (flycheck-hdl-questasim-get-toplevels (file-name-nondirectory (buffer-file-name)))) "-o" (eval (s-replace "." "_" (concat (file-name-nondirectory (buffer-file-name)) "_opt"))) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))))
+  :command ("vopt" "-lint" "-pedanticerrors" "-check_synthesis" "-noincr" (eval (flycheck-hdl-questasim-get-vopt-args)) "-work" (eval (flycheck-hdl-questasim-workdir)) (eval (flycheck-hdl-questasim-get-toplevels (file-name-nondirectory (buffer-file-name)))) "-o" (eval (s-replace "." "_" (concat (file-name-nondirectory (buffer-file-name)) "_opt"))) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))))
   :predicate flycheck-hdl-questasim-run-vopt-p
   :error-patterns
-  ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end)
-   (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vlog-" (one-or-more digit)) ") ")) (message) line-end))
+  ((warning line-start "** Warning"  (opt " (suppressible)") ": " (opt "(" (id (and "vopt-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vopt-" (one-or-more digit)) ") ")) (message) line-end)
+   (error line-start "** Error"  (opt " (suppressible)") ": " (opt "(" (id (and "vopt-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vopt-" (one-or-more digit)) ") ")) (message) line-end)
+   (error line-start "** Error" (message) (* space) " Scope:" (* anything) "File: " (file-name) " Line: " line line-end)) ; word " File: " (file-name) " Line: " line))
   :modes verilog-mode
+  :working-directory (lambda (checker) (when flycheck-hdl-questasim-use-global-workdir (projectile-project-root)))
   )
 
 
@@ -137,11 +156,12 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vcom" "-noincr" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source)
+  :command ("vcom" "-noincr" (eval (flycheck-hdl-questasim-get-vcom-args)) "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source)
   :error-patterns
   ((warning line-start "** Warning" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end)
    (error line-start "** Error" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end))
   :modes vhdl-mode
+  :working-directory (lambda (checker) (when flycheck-hdl-questasim-use-global-workdir (projectile-project-root)))
   :next-checkers ((warning . hdl-questasim-vcom))
   )
 
@@ -151,7 +171,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
 
 See URL `https://www.mentor.com/products/fv/questa/'."
 
-  :command ("vcom" "-noincr" "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source-original)
+  :command ("vcom" "-noincr" (eval (flycheck-hdl-questasim-get-vcom-args)) "-work" (eval (flycheck-hdl-questasim-workdir)) "-writetoplevels" (eval (concat (flycheck-hdl-questasim-workdir) "/" (file-name-nondirectory (buffer-file-name)) ".toplevels.txt")) (eval (when (flycheck-hdl-questasim-modelsimini) (list "-modelsimini" (flycheck-hdl-questasim-modelsimini)))) source-original)
   :predicate (lambda () (not (buffer-modified-p)))
   :error-patterns
   ((warning line-start "** Warning" (opt " (suppressible)") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (file-name) (opt "(" line (opt "." column) ")") ": " (opt "(" (id (and "vcom-" (one-or-more digit)) ") ")) (message) line-end)
@@ -159,6 +179,7 @@ See URL `https://www.mentor.com/products/fv/questa/'."
   :error-filter (lambda (list) nil) ;; We do not care about the output of this
   ;; checker. We are only interested in the sid-effects
   :modes vhdl-mode
+  :working-directory (lambda (checker) (when flycheck-hdl-questasim-use-global-workdir (projectile-project-root)))
   :next-checkers ((warning . hdl-questasim-vopt))
   )
 
