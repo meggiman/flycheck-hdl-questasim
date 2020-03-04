@@ -59,12 +59,12 @@
   )
 
 (defun flycheck-hdl-questasim-get-vcom-args ()
-  "If a .flycheck-work/vcom_args.txt exists its content will be returnbed. This function is used to pass additional arguments to vcom (e.g. include directives etc.)"
+  "If a .flycheck-work/vcom_args.txt exists its content will be returned. This function is used to pass additional arguments to vcom (e.g. include directives etc.)"
   (when (file-exists-p (concat (flycheck-hdl-questasim-workdir) "/vcom_args.txt")) (split-string (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/vcom_args.txt"))))
   )
 
 (defun flycheck-hdl-questasim-get-vopt-args ()
-  "If a .flycheck-work/vopt_args.txt exists its content will be returnbed. This function is used to pass additional arguments to vopt (e.g. include directives etc.)"
+  "If a .flycheck-work/vopt_args.txt exists its content will be returned. This function is used to pass additional arguments to vopt (e.g. include directives etc.)"
   (when (file-exists-p (concat (flycheck-hdl-questasim-workdir) "/vopt_args.txt")) (split-string (shell-command-to-string (concat "cat " (flycheck-hdl-questasim-workdir) "/vopt_args.txt"))))
   )
 
@@ -76,6 +76,21 @@
         (delete-directory (flycheck-hdl-questasim-workdir) t)
         (message "Successfully deleted working directory"))
     (message "No working directory found to delete. Is the current file within a projectile project?")))
+
+(defun flycheck-hdl-questasim-analyze-workdir (dir)
+  "Compiles every *.sv, *.v and *.vhd file found in the directory
+specified into your current working directory (see
+`flycheck-hdl-questasim-toggle-workdir' for more info about the
+working dir)."
+  (interactive "DSelect the directory to scan for files: ")
+  (shell-command (concat (string-join (apply 'list (if (not flycheck-hdl-questasim-vlog-executable) "vlog" flycheck-hdl-questasim-vlog-executable)
+                                             "-sv"
+                                             "-noincr"
+                                             ;; (flycheck-hdl-questasim-get-vlog-args)
+                                             "-work " (flycheck-hdl-questasim-workdir)
+                                             "-modelsimini" (flycheck-hdl-questasim-modelsimini)
+                                             (directory-files-recursively dir "[[:alnum:]]*\\.sv")) " ")
+                         "&")))
 
 (defun flycheck-hdl-questasim-workdir ()
   (if (and (projectile-project-p) flycheck-hdl-questasim-use-global-workdir)
