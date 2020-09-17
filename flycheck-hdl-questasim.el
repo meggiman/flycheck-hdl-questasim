@@ -83,14 +83,15 @@ specified into your current working directory (see
 `flycheck-hdl-questasim-toggle-workdir' for more info about the
 working dir)."
   (interactive "DSelect the directory to scan for files: ")
-  (shell-command (concat (string-join (apply 'list (if (not flycheck-hdl-questasim-vlog-executable) "vlog" flycheck-hdl-questasim-vlog-executable)
-                                             "-sv"
-                                             "-noincr"
-                                             ;; (flycheck-hdl-questasim-get-vlog-args)
-                                             "-work " (flycheck-hdl-questasim-workdir)
-                                             "-modelsimini" (flycheck-hdl-questasim-modelsimini)
-                                             (directory-files-recursively dir "[[:alnum:]]*\\.sv")) " ")
-                         "&")))
+  (call-process-shell-command (concat (string-join (apply 'list (if (not flycheck-hdl-questasim-vlog-executable) "vlog" flycheck-hdl-questasim-vlog-executable)
+                                                          "-sv"
+                                                          "-noincr"
+                                                          ;; (flycheck-hdl-questasim-get-vlog-args)
+                                                          "-work " (flycheck-hdl-questasim-workdir)
+                                                          "-modelsimini" (flycheck-hdl-questasim-modelsimini)
+                                                          (directory-files-recursively dir "[[:alnum:]]*\\.sv")) " ")
+                                      ) nil "*Flycheck Questasim Analyze Workdir Output*" t)
+  (flycheck-buffer))
 
 (defun flycheck-hdl-questasim-workdir ()
   (if (and (projectile-project-p) flycheck-hdl-questasim-use-global-workdir)
